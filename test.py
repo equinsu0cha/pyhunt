@@ -26,7 +26,14 @@ class HuntCmdLine:
         
     def set(self, cmd):
         if cmd[1] == "targets":
-            tgts = cmd[2].split(",")
+#            print(cmd[2][0:4])
+            if cmd[2][0:5] == "file:":
+                f = open(cmd[2][5:], 'r')
+                tgts = f.readlines()
+                tgts = [x.strip() for x in tgts]
+            else:
+                temp = cmd[2].replace(",", " ")
+                tgts = temp.split()
             #TODO: Validate targets
             print("targets  =>  ", tgts)
             self.scan.addTargetList(tgts)
