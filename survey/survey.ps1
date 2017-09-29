@@ -4637,7 +4637,7 @@ function Escape-JSONString($str){
 	return $str;
 }
 
-function ConvertTo-JSON($maxDepth = 4,$forceArray = $false) {
+function ConvertTo-JSON($maxDepth = 6,$forceArray = $false) {
 	begin {
 		$data = @()
 	}
@@ -4756,9 +4756,9 @@ $TestTimes = New-Object PSObject -Property @{
 
 $HostObject | Add-Member -type NoteProperty -Name HostInfo 			-Value $HostInfo
 
-<# $testtime = Get-Date
+$testtime = Get-Date
 $HostObject | Add-Member -type NoteProperty -Name ProcessList 		-Value (Get-Processes)
-$TestTimes  | Add-Member -type NoteProperty -Name ProcessList 		-Value ((Get-Date)-$testtime).TotalSeconds #>
+$TestTimes  | Add-Member -type NoteProperty -Name ProcessList 		-Value ((Get-Date)-$testtime).TotalSeconds
 
 $testtime = Get-Date
 $HostObject | Add-Member -type NoteProperty -Name Netstat 			-Value (Get-Netstat)
@@ -4770,18 +4770,18 @@ $TestTimes  | Add-Member -type NoteProperty -Name DisplayDNS 			-Value ((Get-Dat
 
 $testtime = Get-Date
 # Just do some core processes that will likely be injected as this function is extremely slow on some systems.  Might go to WorkingSet only in future.
-<# $HostObject | Add-Member -type NoteProperty -Name InjectedModules 	-Value (Get-Process | where { $_.Path -match "WINDOWS|Microsoft|Chrome|iexplorer|firefox" } | Get-MemoryInjects)
+$HostObject | Add-Member -type NoteProperty -Name InjectedModules 	-Value (Get-Process | where { $_.Path -match "WINDOWS|Microsoft|Chrome|iexplorer|firefox" } | Get-MemoryInjects)
 $TestTimes  | Add-Member -type NoteProperty -Name InjectedModules 	-Value ((Get-Date)-$testtime).TotalSeconds
 
 $testtime = Get-Date
-$HostObject | Add-Member -type NoteProperty -Name ModuleList		-Value (Get-Modules)
-$TestTimes  | Add-Member -type NoteProperty -Name ModuleList 		-Value ((Get-Date)-$testtime).TotalSeconds
+#$HostObject | Add-Member -type NoteProperty -Name ModuleList		-Value (Get-Modules)
+#$TestTimes  | Add-Member -type NoteProperty -Name ModuleList 		-Value ((Get-Date)-$testtime).TotalSeconds
 
 $testtime = Get-Date
-$HostObject | Add-Member -type NoteProperty -Name DriverList 		-Value (Get-Drivers)
-$TestTimes  | Add-Member -type NoteProperty -Name DriverList 		-Value ((Get-Date)-$testtime).TotalSeconds #>
+#$HostObject | Add-Member -type NoteProperty -Name DriverList 		-Value (Get-Drivers)
+#$TestTimes  | Add-Member -type NoteProperty -Name DriverList 		-Value ((Get-Date)-$testtime).TotalSeconds #>
 
-<# $testtime = Get-Date 
+$testtime = Get-Date 
 $HostObject | Add-Member -type NoteProperty -Name Autoruns 			-Value (Get-PSAutorun -All -CheckSignatures)
 $TestTimes  | Add-Member -type NoteProperty -Name Autoruns 			-Value ((Get-Date)-$testtime).TotalSeconds #>
 
@@ -4816,8 +4816,8 @@ Switch ($ReturnType) {
 		# Drop to Disk
 		# Export Object to XML
 		Write-Verbose "Exporting HostObject!"
-		#$HostObject | Export-CliXML $OutPath -encoding 'UTF8' -force
-        $HostObject | ConvertTo-Json > $OutPath
+		$HostObject | Export-CliXML $OutPath -encoding 'UTF8' -force
+        #$HostObject | ConvertTo-Json > $OutPath
 	}
 	"HTTPPostback" {
 		# Post to Web Server

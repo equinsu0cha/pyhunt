@@ -36,7 +36,7 @@ from impacket.dcerpc.v5.dcomrt import DCOMConnection
 from impacket.dcerpc.v5.dcom import wmi
 from impacket.dcerpc.v5.dtypes import NULL
 
-from pyhunt.scan import *
+#from pyhunt.scan import *
 
 OUTPUT_FILENAME = 'pyhunt' + str(time.time())
 CODEC = "UTF-8"

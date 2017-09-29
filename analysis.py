@@ -77,6 +77,21 @@ class HuntAnalysis():
                 print line
                 output_file.write(line+"\n")
 
+    def analyzeWinLogonEvents(self, data, output_file):
+        obj_name = 'WinLogonEvents'
+        if obj_name in data:
+            line = 'hostname'
+            for k in data[obj_name]['LocalAccounts'][0]:
+                line += "," + k
+            print line
+            output_file.write(line+"\n")
+            for a in data[obj_name]['WinLogonEvents']:
+                line = self.hostname
+                for k in a:
+                    line += "," + str(a[k])
+                print line
+                output_file.write(line+"\n")
+
     def processSurveys(self, surveyFiles):
         pass
         
