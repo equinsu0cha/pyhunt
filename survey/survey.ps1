@@ -2777,14 +2777,16 @@ End {}
 # Depreciated	
 function Invoke-Autorunsc {
 param(
-	[String]$autorunscPath="C:\Windows\temp\autorunsc.exe"
+	[String]$autorunscPath="C:\Windows\system32\autorunsc.exe"
 )
 	
 	# Hardcode Hash (TODO: impliment more better authentication mechanism, maybe a signature check for MS)
 	if ((Get-WmiObject -class win32_operatingsystem -Property OSArchitecture).OSArchitecture -match "64") {	
 		$autorunsURL = "http://live.sysinternals.com/autorunsc64.exe"
+	        $autorunscPath="C:\Windows\system32\autorunsc64.exe"
 	} else {
 		$autorunsURL = "http://live.sysinternals.com/autorunsc.exe"
+	        $autorunscPath="C:\Windows\system32\autorunsc.exe"
 	}
 	
 	# Download Autoruns if not in the target directory & verify it's actually right sigcheck
@@ -3293,8 +3295,10 @@ function Invoke-Sigcheck {
 	# Hardcode Hash (TODO: impliment more better authentication mechanism, maybe a signature check for MS)
 	if ([IntPtr]::Size -eq "8") {	
 		$SigcheckURL = "http://live.sysinternals.com/sigcheck64.exe"
+		$SigcheckPath="C:\Windows\system32\sigcheck64.exe"
 	} else {
 		$SigcheckURL = "http://live.sysinternals.com/sigcheck.exe"
+		$SigcheckPath="C:\Windows\system32\sigcheck.exe"
 	}
 	
 	# Download SigCheck if not in the target directory (might want to verify it's the right SigCheck before running this)

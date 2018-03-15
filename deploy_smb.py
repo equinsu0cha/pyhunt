@@ -43,7 +43,7 @@ from impacket import version, smbserver
 from impacket.smbconnection import *
 from impacket.dcerpc.v5 import transport, scmr
 
-OUTPUT_FILENAME = '__output'
+OUTPUT_FILENAME = 'surveyoutput'
 BATCH_FILENAME  = 'execute.bat'
 SMBSERVER_DIR   = '__tmp'
 DUMMY_SHARE     = 'TMP'
@@ -54,7 +54,7 @@ class SMBServer(Thread):
         self.smb = None
 
     def cleanup_server(self):
-        logging.info('Cleaning up..')
+        print('Cleaning up..')
         try:
             os.unlink(SMBSERVER_DIR + '/smb.log')
         except:
@@ -86,15 +86,15 @@ class SMBServer(Thread):
         smbConfig.set('IPC$','path')
 
         self.smb = smbserver.SMBSERVER(('0.0.0.0',445), config_parser = smbConfig)
-        logging.info('Creating tmp directory')
+        print('Creating tmp directory')
         try:
             os.mkdir(SMBSERVER_DIR)
         except Exception, e:
             logging.critical(str(e))
             pass
-        logging.info('Setting up SMB Server')
+        print('Setting up SMB Server')
         self.smb.processConfigFile()
-        logging.info('Ready to listen...')
+        print('Ready to listen...')
         try:
             self.smb.serve_forever()
         except:
@@ -158,15 +158,20 @@ class CMDEXEC:
 
             print(remoteHost+": deploying "+self.scanobj.surveyfile) 
             self.shell.do_put(self.scanobj.surveyfile)
+            self.shell.do_put("survey/sigcheck.exe")
+            self.shell.do_put("survey/sigcheck64.exe")
+            self.shell.do_put("survey/autorunsc.exe")
+            self.shell.do_put("survey/autorunsc64.exe")
             destsurveyfile = self.scanobj.surveyfile[self.scanobj.surveyfile.rfind("/")+1:]
             print(remoteHost+": executing "+destsurveyfile)
-            self.shell.onecmd("powershell -ep bypass ./"+destsurveyfile+" -verbose")
-            f = self.shell.do_get("SurveyResults.xml")
-            os.rename(f, "results/SurveyResults-"+remoteHost+".xml")
-            self.shell.onecmd("del "+destsurveyfile+" SurveyResults.xml")
+            self.shell.onecmd("powershell -ep bypass ./"+destsurveyfile+" -verbose -ErrorAction continue")
             fh = open("log/"+remoteHost+".txt", 'wb')
             fh.write(self.shell.get_alloutput())
             fh.close()
+            print(remoteHost+": getting results")
+            f = self.shell.do_get("SurveyResults.xml")
+            os.rename(f, "results/SurveyResults-"+remoteHost+".xml")
+            self.shell.onecmd("del "+destsurveyfile+" SurveyResults.xml sigcheck.exe sigcheck64.exe autorunsc.exe autorunsc64.exe")
             print(remoteHost+":  finished")
             #self.shell.__outputBuffer = u''
 
@@ -189,8 +194,10 @@ class RemoteShell(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.__share = share
         self.__mode = mode
-        self.__output = '\\\\127.0.0.1\\' + self.__share + '\\' + OUTPUT_FILENAME
-        self.__batchFile = '%TEMP%\\' + BATCH_FILENAME 
+        #self.__output = '\\\\127.0.0.1\\' + self.__share + '\\' + OUTPUT_FILENAME
+        self.__output = '\\\\127.0.0.1\\C$\\windows\\system32' + '\\' + OUTPUT_FILENAME
+        #self.__batchFile = '%TEMP%\\' + BATCH_FILENAME 
+        self.__batchFile = 'c:\\windows\\system32\\' + BATCH_FILENAME 
         self.__outputBuffer = ''
         self.__command = ''
         self.__shell = '%COMSPEC% /Q /c '
@@ -271,15 +278,16 @@ class RemoteShell(cmd.Cmd):
         #self.transferClient.deleteFile(self.__share, OUTPUT_FILENAME)
         while True:
             try:
-                self.transferClient.getFile(self.__share, OUTPUT_FILENAME, output_callback)
+                self.transferClient.getFile("C$", "\\windows\\system32\\"+OUTPUT_FILENAME, output_callback)
                 break
             except Exception, e:
                 if str(e).find('STATUS_SHARING_VIOLATION') >=0:
                    time.sleep(10)
                    pass
-                else:
-                   print(e)
-        self.transferClient.deleteFile(self.__share, OUTPUT_FILENAME)
+                elif str(e).find('STATUS_OBJECT_PATH_NOT_FOUND') >= 0:
+                   print("Not Found:  \n" + e)
+                   break
+        self.transferClient.deleteFile("C$", "\\windows\\system32\\"+OUTPUT_FILENAME)
 
 #    def get_output(self):
 #        def output_callback(data):
@@ -318,13 +326,15 @@ class RemoteShell(cmd.Cmd):
 
 
     def execute_remote(self, data):
-        command = self.__shell + 'echo ' + data + ' ^> ' + self.__output + ' 2^>^&1 > ' + self.__batchFile + ' & ' + \
+        #command = self.__shell + 'echo ' + data + ' ^> ' + self.__output + ' 2^>^&1 > ' + self.__batchFile + ' & ' + \
+        command = self.__shell + 'echo ' + data + ' ^> ' + self.__output + '  > ' + self.__batchFile + ' & ' + \
                   self.__shell + self.__batchFile
         if self.__mode == 'SERVER':
             command += ' & ' + self.__copyBack
         command += ' & ' + 'del ' + self.__batchFile 
 
         logging.debug('Executing %s' % command)
+        #print('Executing %s' % command)
         resp = scmr.hRCreateServiceW(self.__scmr, self.__scHandle, self.__serviceName, self.__serviceName, lpBinaryPathName=command)
         service = resp['lpServiceHandle']
 
@@ -349,7 +359,7 @@ class RemoteShell(cmd.Cmd):
            #filename = ntpath.basename(tail)
            filename = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
            fh = open(filename,'wb')
-           logging.info("Downloading %s\\%s" % (drive, tail))
+           #print("Downloading %s\\%s" % (drive, tail))
            self.transferClient.getFile(drive[:-1]+'$', tail, fh.write)
            fh.close()
            return filename
@@ -373,8 +383,8 @@ class RemoteShell(cmd.Cmd):
            import ntpath
            pathname = ntpath.join("C:\\windows\\system32", src_file)
            drive, tail = ntpath.splitdrive(pathname)
-           logging.info("Uploading %s to %s" % (src_file, pathname))
-           print ("Uploading %s to %s" % (src_file, pathname))
+           #print("Uploading %s to %s" % (src_file, pathname))
+           #print ("Uploading %s to %s" % (src_file, pathname))
            self.transferClient.putFile(drive[:-1]+'$', tail, fh.read)
            fh.close()
         except Exception, e:
