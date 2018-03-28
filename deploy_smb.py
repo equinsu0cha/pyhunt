@@ -129,7 +129,7 @@ class CMDEXEC:
 
     def run(self, remoteHost):
         remoteName = remoteHost
-        print(remoteHost+":  starting")
+        print(remoteHost+":  starting SMB")
         stringbinding = 'ncacn_np:%s[\pipe\svcctl]' % remoteName
         logging.debug('StringBinding %s'%stringbinding)
         rpctransport = transport.DCERPCTransportFactory(stringbinding)
@@ -145,10 +145,10 @@ class CMDEXEC:
 
         self.shell = None
         try:
-            if self.__mode == 'SERVER':
-                serverThread = SMBServer()
-                serverThread.daemon = True
-                serverThread.start()
+#            if self.__mode == 'SERVER':
+#                serverThread = SMBServer()
+#                serverThread.daemon = True
+#                serverThread.start()
             self.shell = RemoteShell(self.__share, rpctransport, self.__mode, self.__serviceName)
             #print("before pwd")
             #self.shell.onecmd("pwd")
@@ -158,10 +158,13 @@ class CMDEXEC:
 
             print(remoteHost+": deploying "+self.scanobj.surveyfile) 
             self.shell.do_put(self.scanobj.surveyfile)
-            self.shell.do_put("survey/sigcheck.exe")
-            self.shell.do_put("survey/sigcheck64.exe")
-            self.shell.do_put("survey/autorunsc.exe")
-            self.shell.do_put("survey/autorunsc64.exe")
+            for reqFile in self.scanobj.requiredfiles:
+                self.shell.do_put(reqFile)
+                print(remoteHost+": uploading " + reqFile)
+#            self.shell.do_put("survey/sigcheck.exe")
+#            self.shell.do_put("survey/sigcheck64.exe")
+#            self.shell.do_put("survey/autorunsc.exe")
+#            self.shell.do_put("survey/autorunsc64.exe")
             destsurveyfile = self.scanobj.surveyfile[self.scanobj.surveyfile.rfind("/")+1:]
             print(remoteHost+": executing "+destsurveyfile)
             self.shell.onecmd("powershell -ep bypass ./"+destsurveyfile+" -verbose -ErrorAction continue")

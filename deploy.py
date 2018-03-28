@@ -84,6 +84,8 @@ class WMIEXEC:
         dcom = DCOMConnection(addr, self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash,
                               self.__aesKey, oxidResolver=True, doKerberos=self.__doKerberos, kdcHost=self.__kdcHost)
         try:
+            remoteHost = str(addr)
+            print(remoteHost+": starting WMI")
             iInterface = dcom.CoCreateInstanceEx(wmi.CLSID_WbemLevel1Login,wmi.IID_IWbemLevel1Login)
             iWbemLevel1Login = wmi.IWbemLevel1Login(iInterface)
             iWbemServices= iWbemLevel1Login.NTLMLogin('//./root/cimv2', NULL, NULL)
@@ -93,17 +95,23 @@ class WMIEXEC:
 
             self.shell = RemoteShell(self.__share, win32Process, smbConnection)
 
+            print(remoteHost+": deploying "+self.scanobj.surveyfile)
             self.shell.do_cd(self.scanobj.tgtdestdirectory)
-            #self.shell.onecmd("dir")
             self.shell.do_put(self.scanobj.surveyfile)
+            for reqFile in self.scanobj.requiredfiles:
+                self.shell.do_put(reqFile)
+                print(remoteHost+": uploading " + reqFile)
             destsurveyfile = self.scanobj.surveyfile[self.scanobj.surveyfile.rfind("/")+1:]
+            print(remoteHost+": executing "+destsurveyfile)
             self.shell.onecmd("powershell -ep bypass ./"+destsurveyfile+" -verbose")
+            print(remoteHost+": getting results")
             f = self.shell.do_get("SurveyResults.xml")
-            os.rename(f, "results/SurveyResults-"+addr+".json")
+            os.rename(f, "results/SurveyResults-"+addr+".xml")
             self.shell.onecmd("del "+destsurveyfile+" SurveyResults.xml")
             fh = open("log/"+addr+".txt", 'wb')
             fh.write(self.shell.get_alloutput())
             fh.close()
+            print(remoteHost+":  finished")
             self.__outputBuffer = u''
         except  (Exception, KeyboardInterrupt), e:
             import traceback

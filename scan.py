@@ -11,7 +11,7 @@ class HuntScan:
         self.surveyfile = "survey/survey.ps1"
         self.tgtdestdirectory = "c:\\windows\\temp"
         self.__status = {}
-        self.requiredfiles = []
+        self.requiredfiles = ["survey/sigcheck.exe", "survey/sigcheck64.exe"]
         self.components = []
         self.__receiver = None
         self.__username = usr
@@ -58,7 +58,9 @@ class HuntScan:
         self.targets = tgt
         
     def __str__(self):
-        return self.__domain + "\\" + self.__username + " " + str(self.__targets)
+        retVal = self.__domain + "\\" + self.__username + "\n" + str(self.targets) + "\n" + "Survey File:  " + self.surveyfile + "\n" + "Protocol:  " + self.protocol + "\n" + "Required Files:  " + str(self.requiredfiles) + "\n"
+
+        return retVal
 
 #h = HuntScan("user", "pw", "localhost", "")
 #h.addTargetList(["192.168.149.141"])
