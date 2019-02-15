@@ -113,7 +113,7 @@ class CMDEXEC:
         self.__username = username
         self.__password = password
         self.__port = port
-        self.__serviceName = 'BTOBTO'
+        self.__serviceName = 'CrowePyHUNT'
         self.__domain = domain
         self.__lmhash = ''
         self.__nthash = ''
