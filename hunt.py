@@ -97,7 +97,8 @@ class HuntCmdLine(cmd.Cmd):
 #            except KeyError:
 #                print("Command not found...try 'help'")
 
-HuntCmdLine()
+if __name__ == '__main__':
+    HuntCmdLine()
 # s.addTarget('10.1.1.34')
 # s.addTarget('10.1.1.20')
 #s.addTargetList(['10.1.1.34', '10.1.1.20'])
